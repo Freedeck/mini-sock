@@ -1,22 +1,22 @@
 const { DEDICATED_COMPRESSOR_32KB } = require('uWebSockets.js');
 
-const uwse = {
+const ms = {
 	dataCache: {
-		title: 'uWSE Default Server',
-		version: '0.1-dev',
+		title: 'Freedeck Mini Sock Server',
+		version: '0.2',
 	},
-	set: (k, v) => uwse.dataCache[k] = v,
-	get: (k) => uwse.dataCache[k] || null,
+	set: (k, v) => ms.dataCache[k] = v,
+	get: (k) => ms.dataCache[k] || null,
 
 	server: {},
 
 	listeners: {},
 	on: (event, cb) => {
-		if (!uwse.listeners[event]) uwse.listeners[event] = [];
-		uwse.listeners[event].push(cb);
+		if (!ms.listeners[event]) ms.listeners[event] = [];
+		ms.listeners[event].push(cb);
 	},
 	emit: (event, data) => {
-		if (uwse.listeners[event]) uwse.listeners[event].forEach(cb => cb(data));
+		if (ms.listeners[event]) ms.listeners[event].forEach(cb => cb(data));
 	}
 };
 
@@ -31,26 +31,26 @@ const server = (port, path = "/*") => {
 
 		open: (ws, req) => {
 			ws.on = (event, cb) => {
-				ws['_UWSE'] = ws['_UWSE'] || {};
-				ws['_UWSE'][event] = cb;
+				ws['_ms'] = ws['_ms'] || {};
+				ws['_ms'][event] = cb;
 			};
 			ws.emit = (event, ...data) => {
 				ws.send(btoa(event) + ' ' + btoa(JSON.stringify(data)));
 			};
-			uwse.emit('connection', ws, req);
+			ms.emit('connection', ws, req);
 		},
 
 		message: (ws, message, isBinary) => {
 			// parse arraybuffer
 			const m1 = new TextDecoder().decode(message);
-			let found = ws['_UWSE'][atob(m1.split(' ')[0])];
+			let found = ws['_ms'][atob(m1.split(' ')[0])];
 			if (!found) found = (...a) => { }
 			let args = JSON.parse(atob(m1.split(' ')[1]));
 			found(...args);
 		}
 
 	}).get('/*', (res, req) => {
-		res.writeStatus('200 OK').end(uwse.dataCache.title + '@' + uwse.dataCache.version + ' - uWSE');
+		res.writeStatus('200 OK').end(ms.dataCache.title + '@' + ms.dataCache.version + ' - ms');
 	}).listen(port, (listenSocket) => {
 
 		if (listenSocket) {
@@ -60,6 +60,6 @@ const server = (port, path = "/*") => {
 	});
 };
 
-uwse.server = server;
+ms.server = server;
 
-module.exports = uwse;
+module.exports = ms;
