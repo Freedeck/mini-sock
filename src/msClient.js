@@ -20,20 +20,35 @@ const msc = {
 		msc.queue.push(btoa(event) + ' ' + btoa(JSON.stringify(data)))
 	},
 
-	connect: (port, path) => {
+	connect: (ip, port, path) => {
 		return new Promise((resolve, reject) => {
-			const wsClient = new ws(`ws://localhost:${port}${path}`);
+			let server = {
+				ip, port, path,
+				title: '',
+				version: '',
+				error: false,
+			}
+			fetch('http://'+ip+':'+port+path).then(res=>res.text()).then(fr=>{
+				server['title'] = fr.split('@')[0],
+				server['version'] = fr.split('@')[1].split(' - ms')[0]
+			})
+			const wsClient = new ws(`ws://${ip}:${port}${path}`);
 			msc._wsc = wsClient;
 			msc.conn = 0;
-
+			
 			wsClient.on('open', () => {
-				resolve(true);
 				msc.conn = 1;
 				setInterval(() => {
 					if (msc.queue.length > 0) {
 						wsClient.send(msc.queue.shift());
 					}
 				});
+				msc.on('info', (data) => {
+					server['title'] = data.title;
+					server['version'] = data.version;
+					console.log('info')
+					resolve(true, server)
+				})
 			});
 
 			wsClient.on('close', () => {

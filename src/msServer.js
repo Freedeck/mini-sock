@@ -37,6 +37,7 @@ const server = (port, path = "/*") => {
 			ws.emit = (event, ...data) => {
 				ws.send(btoa(event) + ' ' + btoa(JSON.stringify(data)));
 			};
+			ws.emit('info', {title:ms.get('title'), version:ms.get('version')})
 			ms.emit('connection', ws, req);
 		},
 
